@@ -1,9 +1,9 @@
 const UserDB = require("../../db/userDB");
 const Util = require("../../util");
 
-module.exports =  class WSStatus{
+module.exports = class WSStatus {
 
-    constructor( connection, data, logger){
+    constructor(connection, data, logger) {
         this.connection = connection;
         this.data = data;
         this.logger = logger;
@@ -11,7 +11,7 @@ module.exports =  class WSStatus{
     }
 
 
-    sendMessage = (type, message) =>{
+    sendMessage = (type, message) => {
         this.logger.child(message).debug(`Sending message to Reciever`)
         this.connection.send(JSON.stringify({
             type: type,
@@ -20,22 +20,22 @@ module.exports =  class WSStatus{
     }
 
     errorCloseConnection = (message, err) => {
-        this.logger.child({'err': JSON.stringify(err) , errMessage: message}).error('Error while Perfoming operation. Sending closing connection request to reciever')
+        this.logger.child({ 'err': JSON.stringify(err), errMessage: message }).error('Error while Perfoming operation. Sending closing connection request to reciever')
         this.sendMessage('error', message);
         this.connection.close();
-        console.error(err ? err: message);
+        console.error(err ? err : message);
     }
 
-    updateUserStatus = (status) =>{
-        try{
+    updateUserStatus = (status) => {
+        try {
             this.userDBOperation.updateUserStatus(status, this.data.username);
             this.logger.debug('Status updated in DB.')
-        } catch(err){
+        } catch (err) {
             this.errorCloseConnection('Failed to update status', err)
         }
     }
 
-    getUserSuccessCallback = async(user, status) => {
+    getUserSuccessCallback = async (user, status) => {
         if (this.data && new Util().decodeBase64(user.p) === this.data.password) {
             this.sendMessage('success', 'Login Success!!!');
             this.updateUserStatus(status);
@@ -48,33 +48,32 @@ module.exports =  class WSStatus{
         this.errorCloseConnection('Invalid Username / User not found !!!');
     }
 
-    userOnline = (id) =>{
-        if(this.data && this.data.username != null){
-            try{
-                let user = this.userDBOperation.getUser(this.data.username);
-                user = this.userDBOperation.updateConnectionId(id, this.data.username)
-                this.getUserSuccessCallback(user , 'online');
-            }
-            catch(err){
-                this.errorCloseConnection(err)
-            }
-        } else{
+    userOnline = (id) => {
+        if (this.data && this.data.username != null) {
+            this.userDBOperation.getUser(this.data.username)
+                .then(user => {
+                    this.getUserSuccessCallback(user, 'online');
+                })
+                .catch(err => {
+                    this.errorCloseConnection(err)
+                })
+        } else {
             this.errorCloseConnection('Username is required');
         }
     }
 
-    userOffline = (id) =>{
-        if(this.data && this.data.username != null){
-            try{
-                const user = this.userDBOperation.getUser(this.data.username);
-                this.getUserSuccessCallback(user , 'online');
-            }
-            catch(err){
-                this.errorCloseConnection(err)
-            }
-        } else{
+    userOffline = (id) => {
+        if (this.data && this.data.username != null) {
+            this.userDBOperation.getUser(this.data.username)
+                .then(user => {
+                    this.getUserSuccessCallback(user, 'offline');
+                })
+                .catch(err => {
+                    this.errorCloseConnection(err)
+                })
+        } else {
             this.errorCloseConnection('Username is required');
         }
     }
- 
+
 }

@@ -5,23 +5,22 @@ const Util = require("../../util");
 
 module.exports = class AppTurnServer {
 
-    constructor(userDB) {
+    constructor() {
         this.id = v4();
         this.logger = new Util().log({ application: 'turn-server' }, { uid: this.id })
         this.userDB = new UserDB(this.logger);
     }
 
     loadUserInServer = (server) => {
-        try {
-            const users = this.userDB.getAllUser();
-            Object.keys(users).forEach(username => {
-                this.logger.info(`Add user ${username} to turn server`)
-                server.addUser(username, new Util().decodeBase64(users[username].p));
+        this.userDB.getAllUser()
+            .then(users => {
+                Object.keys(users).forEach(username => {
+                    this.logger.info(`Add user ${username} to turn server`)
+                    server.addUser(username, new Util().decodeBase64(users[username].p));
+                });
+            }).catch(err => {
+                this.logger.child({'errMessage': err}).error(`Fail to add user to turn server`)
             });
-        }
-        catch (err) {
-            this.logger.error(`Fail to add user to turn server`)
-        }
     }
 
     createServer = () => {

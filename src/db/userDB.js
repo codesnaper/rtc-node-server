@@ -17,10 +17,11 @@ module.exports = class UserDB {
         }
     }
 
-    getUser = async (user) => {
+    getUser =  async (user) => {
         try {
-            this.logger.child({ 'Fetch User Name': user }).debug('Fetching user from DB');
-            return await this.userDB.getData(`/${user}`);
+            const data =  await this.userDB.getData(`/${user}`);
+            this.logger.child({ 'Fetch User Name': user }).debug('Fetched user from DB');
+            return data;
         } catch (err) {
             this.logger.child({ 'Fetch User Name': user, err: JSON.stringify(err) }).error('Failed in fetching user from DB');
             throw new Error('Failed in fetching user from DB');
