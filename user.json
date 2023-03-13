@@ -1,10 +1,12 @@
 {
     "shubham": {
-        "p": "cGFzc3dvcmQ=",
-        "status": "online",
-        "connectionId": "2c3a32ef-c04e-4f06-a770-d2a9fc842cd7"
+        "password": "cGFzc3dvcmQ=",
+        "status": 0,
+        "username": "shubham",
+        "connectionId": "0ca85d60-b69a-4024-8f8c-0eea88d79ef3"
     },
     "shubha122": {
-        "p": "cGFzc3dvcmQ="
-    }
+        "password": "cGFzc3dvcmQ="
+    },
+    "undefined": {}
 }
