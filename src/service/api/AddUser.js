@@ -3,13 +3,10 @@ const Util = require("../../util");
 
 module.exports = class AddUserApi {
 
-    userDB;
-
-    turnServer;
-
-    constructor(userDB, turnServer) {
+    constructor(userDB, turnServer, logger) {
         this.userDB = userDB;
         this.turnServer = turnServer;
+        this.logger = logger;
     }
 
     createRequest = async (request, response) => {

@@ -1,45 +1,54 @@
 const { WebSocketServer } = require("ws");
 const WSStatus = require("./operation");
+const { v4 } = require('uuid');
+const Util = require("../../util");
 
 module.exports = class AppWSServer {
 
-    userDb;
+    id = 0;
 
-    constructor(userDb) {
-        this.userDb = userDb;
-    }
+    connections = new Map();
 
     sendMessageToUser = (connection, message) => {
         connection.send(JSON.stringify(message));
     }
 
-    createServer() {
+    createServer = () => {
         const wss = new WebSocketServer({
             port: 9090,
-        })
+        });
 
-        wss.on('connection', function (conn) {
-            console.log("User connected");
-
+        wss.on('connection', (conn) => {
+            const id = v4();
+            this.connections.set(id, conn);
+            const logger = new Util().log({ application: 'ws-server' }, { uid: id })
+            logger.info('Web Socket Connection Successfull !!!')
             conn.on('message', (message) => {
                 let data = {};
                 try {
                     data = JSON.parse(message);
-                    console.log(`WS recieve message ${JSON.stringify(data)}`)
                 } catch (e) {
-                    console.log("Invalid JSON");
+                    logger.error('Invalid Message payload recieved ' + e)
                     data = {};
                 }
                 switch (data.type) {
                     case 'online':
-                        new WSStatus(this.userDB, conn, data).userOnline();
+                        logger.child({ operation: data.type, username: data.username }).info('Call change status to Online')
+                        new WSStatus( conn, data, logger).userOnline(id);
                         break;
 
                     case 'offline':
-                        new WSStatus(this.userDB, conn, data).userOffline();
+                        logger.child({ operation: data.type, username: data.username }).info('Call change status to Offline')
+                        new WSStatus( conn, data, logger).userOffline(id);
+                        break;
+
+                    case 'offer':
+                        logger.child({ operation: data.type, username: data.username }).info('Call change status to Offline')
+
                         break;
 
                     default:
+                        logger.child({ operation: data.type, username: data.username }).error(`Invalid operation = ${data.type} recieved in message payload`)
                         conn.send(JSON.stringify({
                             type: 'error',
                             message: 'Invalid Operation'
@@ -48,8 +57,9 @@ module.exports = class AppWSServer {
                 }
             });
 
-            conn.on('close', function () {
-                console.log('Connection Closed to websocket !!!')
+            conn.on('close',  () => {
+                this.connections.delete(id);
+                logger.info('Connection Closed to websocket !!!')
             });
         });
     }

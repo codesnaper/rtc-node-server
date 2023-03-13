@@ -3,8 +3,6 @@ const Util = require("../../util");
 
 module.exports = class LoginAPI {
 
-    userDB;
-
     constructor(userDB) {
         this.userDB = userDB;
     }

@@ -2,20 +2,20 @@ const AddUserApi = require("./AddUser");
 const LoginAPI = require("./Login");
 const { response, request } = require("express");
 var express = require('express');
+const { v4 } = require("uuid");
+const Util = require("../../util");
 module.exports = class AppApiServer {
-
-    userDb;
-
-    turnServer;
 
     constructor(userDb, turnServer) {
         this.userDb = userDb;
         this.turnServer = turnServer;
+        this.id = v4();
+        this.logger = new Util().log({ application: 'api-server' }, { uid: this.id });
     }
 
     endpoints = (app) => {
         app.post('/addUser', async (request, response) => {
-            new AddUserApi(this.userDb, this.turnServer).createRequest(request, response);
+            new AddUserApi(this.userDb, this.turnServer, this.logger).createRequest(request, response);
         });
 
         app.post('/login', async (request, response) => {
@@ -27,10 +27,10 @@ module.exports = class AppApiServer {
         var app = express();
         app.use(express.json());
         this.endpoints(app);
-        const restServer = app.listen(8081, function () {
+        const restServer = app.listen(8081, () => {
             const host = restServer.address().address
             const port = restServer.address().port
-            console.log("Example app listening at http://%s:%s", host, port)
+            this.logger.info(`Example app listening at http://${host}:${port}`)
         })
     }
 }
