@@ -2,3 +2,7 @@ node_modules
 log
 log/
 log/*.log
+build
+build/*
+build/
+/build/
