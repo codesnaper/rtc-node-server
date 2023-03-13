@@ -3,6 +3,8 @@ const WSStatus = require("./operation");
 const { v4 } = require('uuid');
 const Util = require("../../util");
 const WSCallUser = require("./callUser");
+const WSCalleeAnswer = require("./answerCall");
+const WSCalleeDenied = require("./deniedCall");
 
 module.exports = class AppWSServer {
 
@@ -48,14 +50,15 @@ module.exports = class AppWSServer {
                         new WSCallUser(conn, this.connections, data, logger).call();
                         break;
 
+                    //send answer object
                     case 'answer':
                         logger.child({ operation: data.type, 'Caller': data.username, 'Callee': data.currentUser.username }).info('Callee answering call of caller')
-                        //send answer object
+                        new WSCalleeAnswer(conn, this.connections, data, logger).answer();
                         break;
 
                     case 'denied':
                         logger.child({ operation: data.type, 'Caller': data.username, 'Callee': data.currentUser.username }).info('Callee denied call of caller')
-
+                        new WSCalleeDenied(conn, this.connections, data, logger).deny();
                         break;
 
                     default:

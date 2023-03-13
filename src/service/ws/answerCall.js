@@ -1,10 +1,7 @@
 const NotificationDB = require("../../db/notificationDB");
 const UserDB = require("../../db/userDB");
 
-module.exports = class WSCallUser {
-    connection;
-    data;
-    logger;
+module.exports = class WSCalleeAnswer {
 
     constructor(connection, connections, data, logger) {
         this.connection = connection;
@@ -30,14 +27,13 @@ module.exports = class WSCallUser {
         console.error(err ? err : message);
     }
 
-    call = () => {
+    answer = () => {
         this.userDB.getUser(this.data.username)
             .then(user => {
                 if (user.status && user.status === 'online' && user.connectionId != null) {
                     const connection = this.connections.get(user.connectionId);
                     this.sendMessage('call', {offer: this.data.offer, user: this.data.currentUser.username}, connection);
                 } else {
-                    //send notification to user
                     this.errorCloseConnection(`${this.data.username} is offline!!!`);
                 }
             }).catch(err => {
