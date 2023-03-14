@@ -4,7 +4,7 @@ import { UserDB } from "../../db/userDB";
 import { Payload, PayloadType } from "../../model/payload";
 import { User } from "../../model/user";
 
-export class WSCallUser {
+export class WSCalleeAnswer {
 
     private websocketConnection: WebSocket;
 
@@ -24,11 +24,11 @@ export class WSCallUser {
         this.connections = connections;
     }
 
-    private sendMessage = (payloadType: PayloadType, offer : any, websocketConnection: WebSocket, user: User, recieverUsername: string): void => {
+    private sendMessage = (payloadType: PayloadType, answer : any, websocketConnection: WebSocket, user: User, recieverUsername: string): void => {
         this.logger.child({'caller': user.username, callee: recieverUsername}).debug(`Sending message to Reciever`)
         websocketConnection.send(JSON.stringify({
-            type: PayloadType[payloadType],
-            offer: offer,
+            type: payloadType,
+            answer: answer,
             recieverUserName: recieverUsername,
             sendUser: {
                 username: user.username
@@ -39,7 +39,7 @@ export class WSCallUser {
     private errorMessagePayload = (message: string, err: any| undefined = undefined): void => {
         this.logger.child({ 'error': JSON.stringify(err), errorMessage: message }).error('Error while Perfoming operation. Sending closing connection request to reciever')
         this.websocketConnection.send(JSON.stringify({
-            type: PayloadType[PayloadType.error],
+            type: PayloadType.error,
             message: message,
             recieverUserName: this.payload.sendUser.username,
             sendUser: {
@@ -49,13 +49,13 @@ export class WSCallUser {
         console.error(err ? err : message);
     }
 
-    call = () => {
+    public answer = (): void => {
         this.userDB.getUser(this.payload.recieverUserName)
             .then(user => {
                 if (user.connectionId != null) {
                     const connection: WebSocket | undefined = this.connections.get(user.connectionId);
                     if(connection){
-                        this.sendMessage(PayloadType.ring, this.payload.offer, connection, this.payload.sendUser, user.username);
+                        this.sendMessage(PayloadType.answer, this.payload.answer, connection, this.payload.sendUser, user.username);
                     } else{
                         this.errorMessagePayload(`${this.payload.recieverUserName} is not connected!!!`);
                     }
@@ -64,7 +64,7 @@ export class WSCallUser {
                     this.errorMessagePayload(`${this.payload.recieverUserName} is not connected!!!`);
                 }
             }).catch(err => {
-                this.errorMessagePayload(`User ${this.payload.recieverUserName} is not registered with us `,err);
+                this.errorMessagePayload(`Error in calling ${this.payload.recieverUserName}  `,err);
             })
     }
 }

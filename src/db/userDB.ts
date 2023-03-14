@@ -16,6 +16,15 @@ export class UserDB {
         this.logger.info('User DB initialized successfully');
     }
 
+    public addUser = async (user: User): Promise<void> => {
+        try{
+            return this.userDB.push(`/${user.username}`, user, false);
+        } catch (err) {
+            this.logger.child({ err: JSON.stringify(err) }).error('Failed in add user from DB');
+            throw new Error('Failed in adding user to DB');
+        }
+    } 
+
     public getAllUser = async () : Promise<User[]> => {
         try {
             const users: Promise<User[]> =  await this.userDB.getData("/");

@@ -1,3 +1,4 @@
+import { UserStatus } from "./statusEnum";
 import { User } from "./user";
 
 export interface Payload{
@@ -7,8 +8,9 @@ export interface Payload{
     offer?: any,
     answer?: any,
     message?: string;
+    status?: UserStatus;
 }
 
 export enum PayloadType{
-    online, offline, answer, denied,offer, error, success, ring
+    status, answer, denied,offer, error, success, ring
 }
