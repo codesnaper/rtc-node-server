@@ -64,6 +64,7 @@ export class WSCallUser {
                     this.errorMessagePayload(`${this.payload.recieverUserName} is not connected!!!`);
                 }
             }).catch(err => {
+                this.logger.error(err);
                 this.errorMessagePayload(`User ${this.payload.recieverUserName} is not registered with us `,err);
             })
     }

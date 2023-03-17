@@ -27,7 +27,8 @@ export class WSUserStatus {
         this.logger.child({ payloadType: payload.type, recieverUser: payload.recieverUserName, senderUser: payload.sendUser.username }).debug(`Sending message to Reciever`)
         this.websocketConnection.send(JSON.stringify({
             type: PayloadType[payload.type],
-            message: payload.message ,
+            message: payload.message,
+            status: payload.status,
             recieverUserName: payload.recieverUserName,
             sendUser: payload.sendUser
         }))
@@ -45,39 +46,59 @@ export class WSUserStatus {
         });
     }
 
-    private updateUserStatus = (status: UserStatus): void => {
-        try {
-            this.userDBOperation.updateUserStatus(status, this.payload.sendUser.username);
-            this.logger.debug('Status updated in DB.')
-        } catch (err) {
-            this.errorMessagePayload('Failed to update status', err)
-        }
-    }
-
-    private getUserSuccessCallback = async (user: User, status: UserStatus): Promise<void> => {
-        this.updateUserStatus(status);
-        user.status = status
-        this.sendMessage({
-            type: PayloadType.success,
-            message: `User is ${status}` ,
-            recieverUserName: user.username,
-            sendUser: {
-                username: user.username,
-                connectionId: user.connectionId,
-                status: user.status
-            }
+    private updateUserStatus = (status: UserStatus): Promise<any> => {
+        return new Promise((resolve, reject) => {
+            this.userDBOperation.updateUserStatus(status, this.payload.sendUser.username)
+                .then(() => resolve(true))
+                .catch((err) => {
+                    reject(err);
+                });
         });
     }
 
-    public updateStatus = (): void => {
-        this.userDBOperation.getUser(this.payload.sendUser.username)
+    private getUserSuccessCallback = (user: User, status: UserStatus): Promise<any> => {
+        return new Promise((resolve, reject) => {
+            this.updateUserStatus(status)
+                .then(() => {
+                    user.status = status;
+                    this.sendMessage({
+                        type: PayloadType.status,
+                        message: `User is ${status}`,
+                        status: status,
+                        recieverUserName: user.username,
+                        sendUser: {
+                            username: user.username,
+                            connectionId: user.connectionId,
+                        }
+                    });
+                    resolve(true);
+                }).catch((err) => {
+                    reject(err);
+                })
+        });
+    }
+
+    public updateStatus = (): Promise<any> => {
+        return new Promise((resolve, reject) => {
+            this.userDBOperation.getUser(this.payload.sendUser.username)
             .then((user: User) => {
                 user.username = this.payload.sendUser.username;
-                this.getUserSuccessCallback(user, this.payload.status? this.payload.status: UserStatus.offline);
+                this.getUserSuccessCallback(user, this.payload.status ? this.payload.status : UserStatus.offline)
+                .then(() => {
+                    resolve(true);
+                })
+                .catch((err) => {
+                    this.logger.error(err);
+                    this.errorMessagePayload(err);
+                    reject(err);
+                })
             })
             .catch(err => {
-                this.errorMessagePayload(err)
+                this.logger.error(err);
+                this.errorMessagePayload(err);
+                reject(err);
             });
+        })
     }
 
 }

@@ -2,5 +2,8 @@
     "watch": ["src"],
     "ext": ".ts,.js",
     "ignore": [],
-    "exec": "npx ts-node ./src/index.ts"
+    "exec": "npx ts-node ./src/index.ts",
+    "env": {
+      "DB_URL": "mongodb+srv://shubhamk:PJqC4NfEo1ztyu4j@app.obmwvps.mongodb.net/?retryWrites=true&w=majority"
+    }
   }

@@ -37,12 +37,13 @@ export class AppTurnServer {
                     this.server.addUser(username, new Util().decodeBase64(`${map.get(username)?.password}`));
                 });
             }).catch(err => {
-                this.logger.child({'errMessage': err}).error(`Fail to add user to turn server`)
+                this.logger.child({'errMessage': err}).error(`Fail to add user to turn server. Stopping Server`);
+                throw new Error('Fail in loading user from DB');
             });
     }
 
-    public addUser = (user:LoginUser): void => {
-        this.server.addUser(user.username, user.password);
+    public addUser = (user:User): void => {
+        this.server.addUser(user.username, `${user.password}`);
     }
 
     public removeUser = (user:LoginUser): void => {

@@ -8,7 +8,10 @@ const conf = {
     'ws-port': 9090,
     'turn-app-name': 'turn-server',
     'api-app-name': 'api-server',
-    'api-port': 8081
+    'api-port': 8081,
+    'private-key-file':'private-key.pem',
+    'public-key-file': 'public-key.pem',
+    'db-url': `mongodb+srv://shubhamk:PJqC4NfEo1ztyu4j@app.obmwvps.mongodb.net/?retryWrites=true&w=majority`
 }
 
 export default conf;

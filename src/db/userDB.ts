@@ -1,78 +1,99 @@
-import { Config, JsonDB } from "node-json-db";
 import { Logger } from "winston";
-import { UserStatus } from "../model/statusEnum";
+import { Collection, UpdateResult, WithId, Filter } from "mongodb";
 import { User } from "../model/user";
-import conf from "./../conf";
+import { MongoDB } from "./mongoDB";
+import { UserStatus } from "../model/statusEnum";
 
 export class UserDB {
 
-    private userDB: JsonDB;
+    private userCollection: Collection<User>;
 
     private logger: Logger;
 
     constructor(logger: Logger) {
-        this.userDB = new JsonDB(new Config(conf["user-db"], true, true, '/'));
         this.logger = logger;
         this.logger.info('User DB initialized successfully');
+        this.userCollection = MongoDB.getInstance(this.logger).getUserCollection();
     }
 
-    public addUser = async (user: User): Promise<void> => {
-        try{
-            return this.userDB.push(`/${user.username}`, user, false);
-        } catch (err) {
-            this.logger.child({ err: JSON.stringify(err) }).error('Failed in add user from DB');
-            throw new Error('Failed in adding user to DB');
-        }
-    } 
+    public addUser = async (user: User): Promise<any> => {
+        return new Promise((resolve, reject) => {
+            this.userCollection.insertOne(user)
+                .then(() => resolve(true))
+                .catch(err => reject(err))
+        });
+    };
 
-    public getAllUser = async () : Promise<User[]> => {
-        try {
-            const users: Promise<User[]> =  await this.userDB.getData("/");
-            return users;
-        } catch (err) {
-            this.logger.child({ err: JSON.stringify(err) }).error('Failed in fetching all user from DB');
-            throw new Error('Failed in fetching all user from DB');
-        }
+    public getAllUser = async (): Promise<User[]> => {
+        return new Promise((resolve, reject) => {
+            this.userCollection.find().toArray()
+                .then((users: WithId<User>[]) => {
+                    resolve(users);
+                })
+                .catch((err) => reject(err));
+        });
     }
 
-    public getUser =  async (username: string): Promise<User> => {
-        try {
-            const data : Promise<User> =  await this.userDB.getData(`/${username}`);
-            this.logger.child({ 'Fetch User Name': username }).debug('Fetched user from DB');
-            return data;
-        } catch (err) {
-            this.logger.child({ 'Fetch User Name': username, err: JSON.stringify(err) }).error('Failed in fetching user from DB');
-            throw new Error('Failed in fetching user from DB');
-        }
+    public getUser = (username: string): Promise<User> => {
+        return new Promise((resolve, reject) => {
+            this.userCollection.find({ username: { $eq: `${username}` } })
+                .toArray()
+                .then((users: WithId<User>[]) => {
+                    if (users.length === 0) {
+                        throw new Error('User not found!!!');
+                    }
+                    resolve(users[0]);
+                })
+                .catch((err) => reject(err));
+        });
     }
 
-    public updateUserStatus = async (userStatus: UserStatus, username: string): Promise<void>  => {
-        try {
-            await this.userDB.push(`/${username}`, { status: userStatus }, false);
-        } catch (err) {
-            this.logger.child({ 'Fetch User Name': username, err: JSON.stringify(err) }).error(`Failed in updating status for ${username}`);
-            throw new Error(`Failed in updating status for ${username}`);
-        }
+    public updateUserStatus = (userStatus: UserStatus, username: string): Promise<any> => {
+        return new Promise((resolve, reject) => {
+            const userNameQuery: Filter<User> = { username: { $eq: `${username}` } };
+            const updateStatusValue: Filter<User> = {
+                $set: { "status": `${userStatus}` }
+            };
+            this.userCollection.updateOne(userNameQuery, updateStatusValue)
+                .then((result: UpdateResult) => {
+                    if (!result.acknowledged) {
+                        throw new Error('Not able to update status as username not found.')
+                    }
+                    resolve(true)
+                }).catch((err) => reject(err));
+
+        });
     }
 
-    public updateConnectionId = async (connectionId: string, username: string): Promise<void> => {
-        try {
-            await this.userDB.push(`/${username}`, { connectionId: connectionId }, false);
-        } catch (err) {
-            this.logger.child({ 'Fetch User Name': username, err: JSON.stringify(err) }).error(`Failed in updating connection id for ${username}`);
-            throw new Error(`Failed in updating connection id for ${username}`);
-        }
+    public updateConnectionId = (connectionId: string, username: string): Promise<any> => {
+        return new Promise((resolve, reject) => {
+            const userNameQuery: Filter<User> = { username: { $eq: `${username}` } };
+            const updateConnectionid: Filter<User> = {
+                $set: { connectionId: `${connectionId}` }
+            };
+            this.userCollection.updateOne(userNameQuery, updateConnectionid)
+                .then((result: UpdateResult) => {
+                    if (!result.acknowledged) {
+                        throw new Error('Not able to update connection id as username not found.')
+                    }
+                    resolve(true)
+                }).catch((err) => reject(err));
+        });
     }
 
-    public deleteConnectionId = async (username: string): Promise<void> => {
-        try {
-            const user: User = await this.getUser(username);
-            delete user.connectionId;
-            await this.userDB.push(`/${username}`, user, true);
-        } catch (err) {
-            this.logger.child({ 'Fetch User Name': username, err: JSON.stringify(err) }).error(`Failed in removing connection is for ${username}`);
-            throw new Error(`Failed in updating connection id for ${username}`);
-        }
+    public deleteConnectionId = (username: string): Promise<any> => {
+        return new Promise((resolve, reject) => {
+            const userNameQuery: Filter<User> = { username: { $eq: `${username}` } };
+            const updateConnectionid: Filter<User> = {
+                $unset: { connectionId: `` }
+            };
+            this.userCollection.updateOne(userNameQuery, updateConnectionid)
+                .then((result: UpdateResult) => {
+                    if (!result.acknowledged) {
+                        throw new Error('Not able to update connection id as username not found.')
+                    }
+                    resolve(true)
+                }).catch((err) => reject(err));
+        });
     }
-
 }

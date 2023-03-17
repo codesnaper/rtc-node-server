@@ -5,6 +5,7 @@ import { User } from "../../model/user";
 import { LoginUser } from "../../model/Login";
 import { Util } from "../../util";
 import { AppTurnServer } from "../turn/server";
+import { APIError } from "../../model/ApiError";
 
 export class AddUserApi {
 
@@ -23,38 +24,47 @@ export class AddUserApi {
     }
 
     public processRequest = (request: Request, response: Response): void => {
-        const loginUser: LoginUser = request.body as LoginUser;
-        this.userDB.getUser(`/${loginUser.username}`)
-            .then((user: User) => {
+        const loginUser: User = request.body as User;
+        loginUser.password = this.util.encodeBase64(`${loginUser.password}`);
+        this.logger.debug(`Adding user ${loginUser.username} into system.`)
+        this.userDB.getUser(`${loginUser.username}`)
+            .then(() => {
+                this.logger.error(`User Name already found in system. Unable to add user ${loginUser.username}`)
                 response.statusCode = 400;
                 response.statusMessage = "Bad Request"
-                response.send({
-                    "message": 'User name is already registered ',
-                })
+                const errorData: APIError = {
+                    message: 'User Name is already registered',
+                    operation: 'Add User',
+                    code: 400,
+                }
+                response.send(errorData);
             }).catch(() => {
-                this.userDB.addUser({
-                    username: loginUser.username,
-                    password: this.util.encodeBase64(loginUser.password)
-                })
+                this.userDB.addUser(loginUser)
                     .then(() => {
                         try {
                             this.turnServer.addUser(loginUser);
+                            response.statusCode = 201;
+                            response.send({message: 'User Added'})
                         } catch (err) {
                             response.statusCode = 500;
-                            response.send({
-                                "message": 'Failed in adding user to server ',
-                                'error': err
-                            });
-                            response.statusCode = 201;
-                            response.send('User Added')
+                            const errorData: APIError = {
+                                message: 'Fail in adding user. Please try again',
+                                operation: 'Add User',
+                                code: 500,
+                                systemError: err
+                            }
+                            response.send(errorData);
                         }
                     })
                     .catch((err) => {
                         response.statusCode = 500;
-                        response.send({
-                            "message": 'Failed in adding user to DB ',
-                            'error': err
-                        })
+                            const errorData: APIError = {
+                                message: 'Fail in adding user. Please try again',
+                                operation: 'Add User',
+                                code: 500,
+                                systemError: err
+                            }
+                            response.send(errorData);
                     })
             });
     }

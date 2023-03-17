@@ -1,10 +1,18 @@
 {
-    "shubham": {
-        "password": "cGFzc3dvcmQ=",
-        "status": "online",
-        "username": "shubham"
-    },
     "shubha122": {
         "password": "cGFzc3dvcmQ="
+    },
+    "sample": {
+        "username": "sample",
+        "password": "cGFzcw=="
+    },
+    "shubham": {
+        "password": "cGFzc3dvcmQ=",
+        "username": "shubham",
+        "status": "online"
+    },
+    "user1": {
+        "username": "user1",
+        "password": "cGFzcw=="
     }
 }

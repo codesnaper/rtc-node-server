@@ -1,3 +1,4 @@
+import { MongoDB } from "./db/mongoDB";
 import { AppApiServer } from "./service/api/server";
 import { AppTurnServer } from "./service/turn/server";
 import { AppWSServer } from "./service/ws/server";
@@ -14,3 +15,7 @@ logger.info('Turn server initialized !!!');
 
 new AppApiServer(turnServer).createServer();
 logger.info('API server initialized initialized');
+
+process.on('SIGINT', function() {
+    MongoDB.getInstance(logger).closeConnection();
+  });

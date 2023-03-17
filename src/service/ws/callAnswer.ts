@@ -64,6 +64,7 @@ export class WSCalleeAnswer {
                     this.errorMessagePayload(`${this.payload.recieverUserName} is not connected!!!`);
                 }
             }).catch(err => {
+                this.logger.error(err);
                 this.errorMessagePayload(`Error in calling ${this.payload.recieverUserName}  `,err);
             })
     }
