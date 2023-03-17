@@ -9,5 +9,5 @@ export interface User {
     status?: UserStatus;
     connectionId?: string;
     _id?: string;
-    freinds: string[];
+    freinds?: string[];
 }
